@@ -11,6 +11,7 @@ if (!string.IsNullOrWhiteSpace(hostingPort))
 }
 
 builder.Services.AddRazorPages();
+builder.Services.AddMemoryCache();
 builder.Services.Configure<GeminiOptions>(builder.Configuration.GetSection(GeminiOptions.SectionName));
 builder.Services.AddHttpClient<IOcrService, OcrService>();
 builder.Services.AddScoped<ILabelVerificationService, LabelVerificationService>();

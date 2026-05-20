@@ -1,8 +1,11 @@
+using System.Net;
 using System.Net.Http.Json;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Alcohol_Label.Models;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 
 namespace Alcohol_Label.Services;
@@ -18,11 +21,13 @@ public class OcrService : IOcrService
         """;
 
     private readonly HttpClient _httpClient;
+    private readonly IMemoryCache _cache;
     private readonly GeminiOptions _options;
 
-    public OcrService(HttpClient httpClient, IOptions<GeminiOptions> options)
+    public OcrService(HttpClient httpClient, IMemoryCache cache, IOptions<GeminiOptions> options)
     {
         _httpClient = httpClient;
+        _cache = cache;
         _options = options.Value;
     }
 
@@ -84,7 +89,15 @@ public class OcrService : IOcrService
 
         using var memoryStream = new MemoryStream();
         await file.CopyToAsync(memoryStream, cancellationToken);
-        var base64File = Convert.ToBase64String(memoryStream.ToArray());
+        var fileBytes = memoryStream.ToArray();
+        var cacheKey = CreateCacheKey(fileBytes, mimeType);
+
+        if (_cache.TryGetValue(cacheKey, out LabelApplication? cachedApplication) && cachedApplication is not null)
+        {
+            return CloneLabelApplication(cachedApplication);
+        }
+
+        var base64File = Convert.ToBase64String(fileBytes);
 
         var payload = new
         {
@@ -132,11 +145,113 @@ public class OcrService : IOcrService
 
         if (!response.IsSuccessStatusCode)
         {
-            throw new InvalidOperationException($"Gemini OCR request failed: {(int)response.StatusCode} {response.ReasonPhrase}. {responseBody}");
+            throw new InvalidOperationException(BuildGeminiErrorMessage(response.StatusCode, response.ReasonPhrase, responseBody));
         }
 
         var geminiText = ExtractGeminiText(responseBody);
-        return ParseGeminiLabelApplication(geminiText);
+        var application = ParseGeminiLabelApplication(geminiText);
+
+        _cache.Set(
+            cacheKey,
+            CloneLabelApplication(application),
+            new MemoryCacheEntryOptions
+            {
+                SlidingExpiration = TimeSpan.FromHours(2),
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(8),
+                Size = 1
+            });
+
+        return application;
+    }
+
+    private string CreateCacheKey(byte[] fileBytes, string mimeType)
+    {
+        var hash = Convert.ToHexString(SHA256.HashData(fileBytes));
+        return $"gemini-ocr:{_options.Model}:{mimeType}:{hash}";
+    }
+
+    private static LabelApplication CloneLabelApplication(LabelApplication application)
+    {
+        return new LabelApplication
+        {
+            ProductName = application.ProductName,
+            BrandName = application.BrandName,
+            AlcoholType = application.AlcoholType,
+            AlcoholByVolume = application.AlcoholByVolume,
+            NetContents = application.NetContents,
+            ProducerOrImporter = application.ProducerOrImporter,
+            CountryOfOrigin = application.CountryOfOrigin,
+            GovernmentWarning = application.GovernmentWarning,
+            ContainsSulfites = application.ContainsSulfites,
+            RawText = application.RawText
+        };
+    }
+
+    private static string BuildGeminiErrorMessage(HttpStatusCode statusCode, string? reasonPhrase, string responseBody)
+    {
+        if (statusCode == HttpStatusCode.TooManyRequests)
+        {
+            var retryDelay = ExtractRetryDelay(responseBody);
+            var retryText = string.IsNullOrWhiteSpace(retryDelay)
+                ? string.Empty
+                : $" Google suggested retrying after about {retryDelay}.";
+
+            return "Gemini quota/rate limit was reached for this API key or model."
+                + retryText
+                + " Wait for the quota to reset, enable billing/request a quota increase in Google AI Studio, or paste OCR text into the Optional OCR text box to keep testing without using Gemini.";
+        }
+
+        var providerMessage = ExtractProviderErrorMessage(responseBody);
+        if (!string.IsNullOrWhiteSpace(providerMessage))
+        {
+            return $"Gemini OCR request failed: {(int)statusCode} {reasonPhrase}. {providerMessage}";
+        }
+
+        return $"Gemini OCR request failed: {(int)statusCode} {reasonPhrase}.";
+    }
+
+    private static string ExtractRetryDelay(string responseBody)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(responseBody);
+            var details = document.RootElement.GetProperty("error").GetProperty("details");
+            foreach (var detail in details.EnumerateArray())
+            {
+                if (detail.TryGetProperty("retryDelay", out var retryDelay))
+                {
+                    return retryDelay.GetString() ?? string.Empty;
+                }
+            }
+        }
+        catch (JsonException)
+        {
+        }
+        catch (KeyNotFoundException)
+        {
+        }
+
+        return string.Empty;
+    }
+
+    private static string ExtractProviderErrorMessage(string responseBody)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(responseBody);
+            return document.RootElement
+                .GetProperty("error")
+                .GetProperty("message")
+                .GetString() ?? string.Empty;
+        }
+        catch (JsonException)
+        {
+        }
+        catch (KeyNotFoundException)
+        {
+        }
+
+        return string.Empty;
     }
 
     private static LabelApplication ParseGeminiLabelApplication(string geminiText)

@@ -269,3 +269,16 @@ Do not commit a real Gemini API key to GitHub. `appsettings.json` intentionally 
 ```
 
 Use `.NET user-secrets` locally or environment variables in deployment.
+
+## Gemini Quota Troubleshooting
+
+If the app shows a quota or rate limit message, the deployment is working but the Gemini API key has hit a Google free-tier limit for the current model/project.
+
+Ways to continue:
+
+- Wait for the quota to reset. Requests-per-day quotas reset at midnight Pacific time.
+- Add billing or request a quota increase in Google AI Studio.
+- Use a different Gemini API key/project with available quota.
+- Paste OCR text into the **Optional OCR text** box to test the verification logic without making a Gemini API call.
+
+The app caches repeated OCR results for the same uploaded file while the server instance is running, so re-uploading the exact same image should not use another Gemini request during that cache window.
