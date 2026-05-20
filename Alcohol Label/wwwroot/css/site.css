@@ -252,6 +252,28 @@ h2 {
     gap: 14px;
 }
 
+.sample-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.sample-actions button {
+    min-height: 38px;
+    border: 1px solid #b7c9c4;
+    border-radius: 8px;
+    padding: 8px 12px;
+    background: #ffffff;
+    color: var(--accent-dark);
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.sample-actions button:hover {
+    border-color: var(--accent);
+    background: #edf6f3;
+}
+
 .form-group {
     display: grid;
     gap: 8px;

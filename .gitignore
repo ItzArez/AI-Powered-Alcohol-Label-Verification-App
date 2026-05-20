@@ -4,3 +4,5 @@ obj/
 *.user
 *.suo
 appsettings.Development.json
+**/Properties/PublishProfiles/
+**/Properties/ServiceDependencies/
