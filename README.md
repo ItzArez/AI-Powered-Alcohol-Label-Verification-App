@@ -127,6 +127,55 @@ ASPNETCORE_ENVIRONMENT=Production
 
 The double underscore in `Gemini__ApiKey` is intentional. ASP.NET Core maps it to `Gemini:ApiKey`.
 
+## Azure Deployment
+
+The app can deploy to Azure App Service either as a normal .NET 8 web app or as a Docker container.
+
+### Option A: Azure App Service from GitHub
+
+1. In the Azure Portal, create an **App Service**.
+2. Choose:
+
+```text
+Runtime stack: .NET 8
+Operating system: Windows or Linux
+```
+
+3. In **Deployment Center**, connect this GitHub repository:
+
+```text
+ItzArez/AI-Powered-Alcohol-Label-Verification-App
+```
+
+4. If Azure asks for the project path, use:
+
+```text
+Alcohol Label/Alcohol Label.csproj
+```
+
+5. In **Configuration > Application settings**, add:
+
+```text
+Gemini__ApiKey=YOUR_GEMINI_API_KEY
+ASPNETCORE_ENVIRONMENT=Production
+```
+
+6. Save, restart the App Service, and open the generated Azure URL.
+
+### Option B: Azure App Service Custom Container
+
+This repo also includes a root `Dockerfile`.
+
+For a custom container deployment, set these App Service application settings:
+
+```text
+Gemini__ApiKey=YOUR_GEMINI_API_KEY
+ASPNETCORE_ENVIRONMENT=Production
+WEBSITES_PORT=8080
+```
+
+The app also reads `PORT` and `WEBSITES_PORT` so it can bind correctly on cloud platforms.
+
 ## Testing Plan
 
 ### Test 1: Perfect Pass
