@@ -97,6 +97,36 @@ dotnet user-secrets set "Gemini:ApiKey" "YOUR_GEMINI_API_KEY"
 
 4. Press `F5` or click Run.
 
+## Railway Deployment
+
+This repository includes a root `Dockerfile` for Railway. Railway detects the Dockerfile, builds the ASP.NET Core app, and runs it on Railway's `PORT` environment variable.
+
+### Deploy from GitHub
+
+1. Go to Railway and create a new project.
+2. Choose **Deploy from GitHub repo**.
+3. Select:
+
+```text
+ItzArez/AI-Powered-Alcohol-Label-Verification-App
+```
+
+4. Add this Railway service variable:
+
+```text
+Gemini__ApiKey=YOUR_GEMINI_API_KEY
+```
+
+5. Optional production variable:
+
+```text
+ASPNETCORE_ENVIRONMENT=Production
+```
+
+6. Deploy the service and generate a public domain from Railway's networking settings.
+
+The double underscore in `Gemini__ApiKey` is intentional. ASP.NET Core maps it to `Gemini:ApiKey`.
+
 ## Testing Plan
 
 ### Test 1: Perfect Pass
