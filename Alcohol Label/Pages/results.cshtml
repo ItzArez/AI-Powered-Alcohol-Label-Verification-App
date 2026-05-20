@@ -1,0 +1,91 @@
+﻿@page
+@model Alcohol_Label.Pages.ResultsModel
+@{
+    ViewData["Title"] = "Verification Results";
+}
+
+@if (Model.Result is null)
+{
+    <section class="empty-state">
+        <h1>No verification result</h1>
+        <p>Run a label through the verifier to see extracted fields and compliance checks.</p>
+        <a class="primary-link" asp-page="/Index">Start verification</a>
+    </section>
+}
+else
+{
+    <section class="results-shell">
+        <div class="results-hero @(Model.Result.Passed ? "passed" : "failed")">
+            <div>
+                <p class="eyebrow">Verification results</p>
+                <h1>@(Model.Result.Passed ? "Label Passed" : "Needs Review")</h1>
+                <p>
+                    @Model.Result.PassedCount of @Model.Result.Checks.Count checks passed.
+                    Verified @Model.Result.VerifiedAtUtc.ToLocalTime().ToString("g").
+                </p>
+            </div>
+            <span class="result-badge @(Model.Result.Passed ? "passed" : "failed")">
+                @(Model.Result.Passed ? "Passed" : "Review")
+            </span>
+        </div>
+
+        <section class="metric-row">
+            <div class="metric">
+                <span>Passed</span>
+                <strong>@Model.Result.PassedCount</strong>
+            </div>
+            <div class="metric">
+                <span>Failed</span>
+                <strong>@Model.Result.FailedCount</strong>
+            </div>
+            <div class="metric">
+                <span>Total</span>
+                <strong>@Model.Result.Checks.Count</strong>
+            </div>
+        </section>
+
+        <section class="results-panel">
+            <div class="panel-heading">
+                <h2>Field Checks</h2>
+                <a asp-page="/Index">Verify another label</a>
+            </div>
+
+            <div class="table-wrap">
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th>Field</th>
+                            <th>Status</th>
+                            <th>Expected Value</th>
+                            <th>Extracted Value</th>
+                            <th>Message</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var check in Model.Result.Checks)
+                        {
+                            <tr>
+                                <td>@check.FieldName</td>
+                                <td>
+                                    <span class="check-chip @(check.Passed ? "passed" : "failed")">
+                                        @(check.Passed ? "Pass" : "Fail")
+                                    </span>
+                                </td>
+                                <td>@(string.IsNullOrWhiteSpace(check.ExpectedValue) ? "Not provided" : check.ExpectedValue)</td>
+                                <td>@(string.IsNullOrWhiteSpace(check.ExtractedValue) ? "Not found" : check.ExtractedValue)</td>
+                                <td>@check.Message</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="results-panel">
+            <div class="panel-heading">
+                <h2>Extracted Label Text</h2>
+            </div>
+            <pre class="raw-text">@Model.Result.Application.RawText</pre>
+        </section>
+    </section>
+}

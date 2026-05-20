@@ -1,0 +1,11 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Alcohol_Label</RootNamespace>
+    <UserSecretsId>5f1866a5-4b75-48a4-844e-2be87b9d8576</UserSecretsId>
+  </PropertyGroup>
+
+</Project>

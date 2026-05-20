@@ -1,0 +1,126 @@
+﻿@page
+@model Alcohol_Label.Pages.IndexModel
+@{
+    ViewData["Title"] = "Label Verification";
+}
+
+<section class="page-shell">
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">AI label review</p>
+            <h1>Alcohol Label Verification</h1>
+            <p>Upload a label image or PDF. Gemini extracts the text, then the app checks the required label fields.</p>
+        </div>
+        <div class="status-note">
+            <span>Gemini OCR</span>
+            <strong>Enabled</strong>
+        </div>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" class="verification-panel" data-verification-form>
+        <div class="upload-grid">
+            <label class="upload-zone" data-drop-zone>
+                <span class="upload-icon">+</span>
+                <span class="upload-title">Upload label file</span>
+                <span class="upload-copy">JPG, PNG, WebP, PDF, TXT, or CSV</span>
+                <span class="upload-meta" data-file-meta>No file selected</span>
+                <input asp-for="Upload" type="file" accept=".jpg,.jpeg,.png,.webp,.pdf,.txt,.csv,image/*" data-upload-input />
+            </label>
+
+            <div class="review-notes">
+                <h2>What gets checked</h2>
+                <ul>
+                    <li>Brand and product name</li>
+                    <li>Alcohol type and ABV</li>
+                    <li>Net contents and producer/importer</li>
+                    <li>Government warning language</li>
+                </ul>
+            </div>
+        </div>
+
+        <span asp-validation-for="Upload" class="text-danger"></span>
+
+        <section class="expected-panel">
+            <div class="panel-heading compact">
+                <div>
+                    <h2>Expected Values</h2>
+                    <p>Optional comparison fields for TTB sample tests.</p>
+                </div>
+            </div>
+
+            <div class="expected-grid">
+                <div class="form-group">
+                    <label asp-for="ExpectedValues.BrandName">Brand Name</label>
+                    <input asp-for="ExpectedValues.BrandName" placeholder="ABC WINERY" />
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="ExpectedValues.ClassType">Class/Type</label>
+                    <input asp-for="ExpectedValues.ClassType" placeholder="AMERICAN MERLOT" />
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="ExpectedValues.AlcoholContent">Alcohol Content</label>
+                    <input asp-for="ExpectedValues.AlcoholContent" placeholder="ALC. 15.5% BY VOL." />
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="ExpectedValues.NetContents">Net Contents</label>
+                    <input asp-for="ExpectedValues.NetContents" placeholder="750 ML" />
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="ExpectedValues.ProducerBottler">Producer/Bottler</label>
+                    <input asp-for="ExpectedValues.ProducerBottler" placeholder="XYZ VINTNERS" />
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="ExpectedValues.CountryOfOrigin">Country of Origin</label>
+                    <input asp-for="ExpectedValues.CountryOfOrigin" placeholder="Optional" />
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="ExpectedValues.SulfitesRequirement">Sulfites</label>
+                    <select asp-for="ExpectedValues.SulfitesRequirement">
+                        <option value="Ignore">Ignore</option>
+                        <option value="Required">Required</option>
+                        <option value="NotExpected">Not expected</option>
+                    </select>
+                </div>
+
+                <label class="checkbox-row">
+                    <input asp-for="ExpectedValues.RequireCountryOfOrigin" />
+                    <span>Require country of origin</span>
+                </label>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="ExpectedValues.GovernmentWarning">Expected Government Warning</label>
+                <textarea asp-for="ExpectedValues.GovernmentWarning" rows="4" placeholder="Optional: paste the standard warning for exact comparison."></textarea>
+            </div>
+        </section>
+
+        <div class="form-group">
+            <label asp-for="PastedText">Optional OCR text</label>
+            <textarea asp-for="PastedText" rows="8" placeholder="Paste extracted label text here only if you want to skip image OCR." data-ocr-text></textarea>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+        {
+            <div class="alert-message">@Model.ErrorMessage</div>
+        }
+
+        <div class="form-actions">
+            <button type="submit" class="primary-action" data-submit-button>Verify Label</button>
+            <p>Large images are optimized in the browser before upload to make Gemini extraction faster.</p>
+        </div>
+    </form>
+</section>
+
+<div class="loading-overlay" data-loading hidden>
+    <div class="loading-panel">
+        <div class="spinner"></div>
+        <strong>Reading label with Gemini</strong>
+        <span>Extracting fields and checking required alcohol label information.</span>
+    </div>
+</div>
